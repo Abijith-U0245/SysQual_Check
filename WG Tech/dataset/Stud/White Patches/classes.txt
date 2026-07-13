@@ -1,0 +1,4 @@
+Black_Patches
+Thread_Missing
+White_Paint_On_Thread
+White_Patches

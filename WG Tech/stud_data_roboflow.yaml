@@ -1,0 +1,5 @@
+﻿train: datasets/stud_roboflow_v1/train/images
+val: datasets/stud_roboflow_v1/valid/images
+
+nc: 6
+names: ['Black_Patches', 'Thread_Missing', 'White_Paint_On_Thread', 'White_Patches', 'White_Patch_Missing', 'Okay_Part']
