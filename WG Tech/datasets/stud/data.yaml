@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 5
+names: ['Stud_Black_Patches', 'Stud_OKAY', 'Stud_Thread_Missing', 'Stud_WHITE_PATCH_MISSING', 'Stud_pAINT_ON_Thread']
+
+roboflow:
+  workspace: roadsafetymaster
+  project: my-first-project-z0hnb
+  version: dataset
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/roadsafetymaster/my-first-project-z0hnb/dataset/dataset

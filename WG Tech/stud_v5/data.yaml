@@ -1,0 +1,12 @@
+train: images/train
+val: images/test
+
+nc: 6
+
+names:
+  0: Black_Patches
+  1: Thread_Missing
+  2: White_Paint_On_Thread
+  3: White_Patches
+  4: White_Patch_Missing
+  5: Okay_Part

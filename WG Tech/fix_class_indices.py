@@ -1,25 +1,15 @@
 """
 Fixes class-index mismatches caused by every annotation folder having a
 different local classes.txt. LabelImg writes a NUMBER into each .txt label
-file based on that folder's own classes.txt order — if folders disagree on
+file based on that folder's own classes.txt order - if folders disagree on
 order (or only list a subset of classes), the same number silently means
 different things once everything is merged for training.
 
-APPROACH: rather than trying to decode each folder's (proven unreliable —
-some folders' classes.txt was clearly copy-pasted/reused from a different
-folder's session) local classes.txt, this trusts the one thing that IS
-reliable: every image was manually sorted into a folder named after its
-actual defect type. So every box in a given folder gets forced to that
-folder's correct global class index, regardless of what number was
-originally written.
-
-This is safe as long as each folder genuinely contains only one real
-defect type throughout (true for this dataset — confirmed each folder's
-raw indices were monolithic, i.e. one class per folder, not a mix).
-
-Run this once, then re-run organize_yolo_dataset.py and retrain from
-scratch — the previous best.pt was trained on the corrupted mapping and
-can't be salvaged by fine-tuning, it needs a clean retrain.
+APPROACH: rather than trying to decode each folder's local classes.txt,
+this trusts the one thing that IS reliable: every image was manually
+sorted into a folder named after its actual defect type. So every box in
+a given folder gets forced to that folder's correct global class index,
+regardless of what number was originally written.
 
 Usage:
     python fix_class_indices.py --src "dataset/Stud"
@@ -29,15 +19,23 @@ import argparse
 import os
 
 # The one correct, canonical mapping every folder should use.
-GLOBAL_CLASSES = ["Black_Patches", "Thread_Missing", "White_Paint_On_Thread", "White_Patches"]
+GLOBAL_CLASSES = [
+    "Black_Patches",
+    "Thread_Missing",
+    "White_Paint_On_Thread",
+    "White_Patches",
+    "White_Patch_Missing",
+    "Okay_Part",
+]
 
-# Maps folder name (lowercased) -> its real class. Add entries here for
-# other parts/folders as you extend this to Pin/Adaptor/Capnut.
+# Maps folder name (lowercased) -> its real class.
 FOLDER_NAME_TO_CLASS = {
     "black patches": "Black_Patches",
     "thread missing": "Thread_Missing",
     "white paint on thread": "White_Paint_On_Thread",
     "white patches": "White_Patches",
+    "white patch missing": "White_Patch_Missing",
+    "okay_part": "Okay_Part",
 }
 
 
@@ -58,15 +56,14 @@ def main():
         print(f"\n=== {folder_name} ===")
 
         if canonical_name is None:
-            # Not a recognized defect folder (e.g. Okay_Part, White Patch
-            # Missing — these are background/unlabeled folders, nothing to fix)
-            print("  not a mapped defect class — skipping (expected for background folders)")
+            print(f"  WARNING: unrecognized folder name '{folder_name}' - not in FOLDER_NAME_TO_CLASS, skipping")
+            print("  If this folder should map to a real class, add it to FOLDER_NAME_TO_CLASS above and rerun.")
             continue
 
         correct_idx = global_index[canonical_name]
         print(f"  forcing every box in this folder to class {correct_idx} ({canonical_name})")
 
-        n_fixed, n_unchanged = 0, 0
+        n_fixed, n_unchanged, n_empty = 0, 0, 0
 
         for fname in os.listdir(folder_path):
             if not fname.endswith(".txt") or fname == "classes.txt":
@@ -74,6 +71,7 @@ def main():
             fpath = os.path.join(folder_path, fname)
             lines = open(fpath).read().strip().splitlines()
             if not lines:
+                n_empty += 1
                 continue
 
             new_lines = []
@@ -96,16 +94,14 @@ def main():
             else:
                 n_unchanged += 1
 
-        print(f"  files corrected: {n_fixed}   already correct: {n_unchanged}")
+        print(f"  files corrected: {n_fixed}   already correct: {n_unchanged}   empty label files: {n_empty}")
 
-        # Overwrite this folder's classes.txt with the correct global one
-        # so future LabelImg sessions here stay consistent.
         if not args.dry_run:
             with open(os.path.join(folder_path, "classes.txt"), "w") as f:
                 f.write("\n".join(GLOBAL_CLASSES) + "\n")
 
-    print("\nDone. Re-run organize_yolo_dataset.py and retrain from scratch —")
-    print("the previous best.pt was trained on the corrupted mapping.")
+    print("\nDone. Re-run organize_yolo_dataset.py and retrain from scratch -")
+    print("any previous best.pt trained before this fix used an incomplete class set.")
 
 
 if __name__ == "__main__":

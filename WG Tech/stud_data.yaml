@@ -1,9 +1,11 @@
-path: c:\Users\abiji\AppData\Local\Packages\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\LocalState\sessions\ADBE70351D2CAC42C221C9D5EE9402F530EC7617\transfers\2026-28\WG Tech (2)\WG Tech\stud_yolo_dataset
-train: images/train
-val: images/val
+train: stud_v5/images/train
+val: stud_v5/images/val
 
+nc: 6
 names:
   0: Black_Patches
   1: Thread_Missing
   2: White_Paint_On_Thread
   3: White_Patches
+  4: White_Patch_Missing
+  5: Okay_Part
