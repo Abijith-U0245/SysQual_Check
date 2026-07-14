@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 7
+names: ['Okay_Pin', 'black patch_pin', 'drill touch_pin', 'odlinemark_pin', 'pitmark_pin', 'rust_pin', 'whiterust_pin']
+
+roboflow:
+  workspace: roadsafetymaster
+  project: my-first-project-z0hnb
+  version: dataset
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/roadsafetymaster/my-first-project-z0hnb/dataset/dataset
