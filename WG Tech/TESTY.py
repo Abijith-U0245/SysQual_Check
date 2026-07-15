@@ -1,23 +1,12 @@
 from pathlib import Path
-from collections import defaultdict
-import random
 import shutil
-import math
 
-# ======================================================
-# CONFIG
-# ======================================================
-SOURCE = Path("datasets/stud")
-DEST = Path("stud_v5")
+# ===========================
+# SOURCE AND DESTINATION
+# ===========================
 
-TRAIN_RATIO = 0.80
-SEED = 42
-
-random.seed(SEED)
-
-# Remove old stud_v5 if it exists
-if DEST.exists():
-    shutil.rmtree(DEST)
+SOURCE = Path("datasets/stud/train")
+DEST = Path("stud_full")      # <-- Change this to any folder name you want
 
 # Create folders
 for folder in [
@@ -28,85 +17,35 @@ for folder in [
 ]:
     folder.mkdir(parents=True, exist_ok=True)
 
-image_dir = SOURCE / "train" / "images"
-label_dir = SOURCE / "train" / "labels"
+image_count = 0
+label_count = 0
+missing_labels = 0
 
-# ------------------------------------------------------
-# Group images by class
-# ------------------------------------------------------
-class_images = defaultdict(list)
-
-for img in image_dir.iterdir():
+# Copy all images and labels to BOTH train and test
+for img in (SOURCE / "images").iterdir():
 
     if img.suffix.lower() not in [".jpg", ".jpeg", ".png"]:
         continue
 
-    label = label_dir / (img.stem + ".txt")
+    label = SOURCE / "labels" / (img.stem + ".txt")
 
     if not label.exists():
         print("Missing label:", img.name)
+        missing_labels += 1
         continue
 
-    with open(label) as f:
-        line = f.readline().strip()
+    # Train
+    shutil.copy2(img, DEST / "images" / "train" / img.name)
+    shutil.copy2(label, DEST / "labels" / "train" / label.name)
 
-    if not line:
-        continue
+    # Test
+    shutil.copy2(img, DEST / "images" / "test" / img.name)
+    shutil.copy2(label, DEST / "labels" / "test" / label.name)
 
-    cls = int(line.split()[0])
+    image_count += 1
+    label_count += 1
 
-    class_images[cls].append((img, label))
-
-print("\n==============================")
-print("Class-wise Split")
-print("==============================")
-
-train_total = 0
-test_total = 0
-
-for cls in sorted(class_images):
-
-    samples = class_images[cls]
-
-    random.shuffle(samples)
-
-    total = len(samples)
-
-    train_count = math.floor(total * TRAIN_RATIO)
-    test_count = total - train_count
-
-    # Guarantee at least one test image if possible
-    if total >= 2 and test_count == 0:
-        train_count -= 1
-        test_count = 1
-
-    train = samples[:train_count]
-    test = samples[train_count:]
-
-    print(
-        f"Class {cls} -> Total:{total:3d}  Train:{len(train):3d}  Test:{len(test):3d}"
-    )
-
-    train_total += len(train)
-    test_total += len(test)
-
-    for img, lbl in train:
-        shutil.copy2(img, DEST / "images" / "train" / img.name)
-        shutil.copy2(lbl, DEST / "labels" / "train" / lbl.name)
-
-    for img, lbl in test:
-        shutil.copy2(img, DEST / "images" / "test" / img.name)
-        shutil.copy2(lbl, DEST / "labels" / "test" / lbl.name)
-
-print("\n==============================")
-print("TOTAL")
-print("==============================")
-print("Train:", train_total)
-print("Test :", test_total)
-
-# ------------------------------------------------------
-# Create data.yaml
-# ------------------------------------------------------
+# Create YAML
 yaml = """train: images/train
 val: images/test
 
@@ -121,7 +60,14 @@ names:
   5: Okay_Part
 """
 
-with open(DEST / "data.yaml", "w") as f:
+with open(DEST / "stud_data.yaml", "w") as f:
     f.write(yaml)
 
-print("\nDone! stud_v5 created successfully.")
+print("\n===================================")
+print("Dataset Created Successfully")
+print("===================================")
+print(f"Dataset Folder : {DEST}")
+print(f"Images Copied  : {image_count}")
+print(f"Labels Copied  : {label_count}")
+print(f"Missing Labels : {missing_labels}")
+print("All images are present in BOTH train and test.")
